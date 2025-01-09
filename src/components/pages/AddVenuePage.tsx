@@ -2,14 +2,46 @@ import React, { FC, useEffect, useState } from "react";
 import { Form, Link, LoaderFunctionArgs, redirect } from "react-router-dom";
 import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
+// export const action = async ({ request }: LoaderFunctionArgs) => {
+//     let formData = await request.formData();
+//     let name = formData.get("name")?.toString().trim();
+//     let venuetype = formData.get("venuetype")?.toString().trim();
+
+//     const newVenue = {
+//         name,
+//         venuetype,
+//     };
+
+//     console.log("New Venue:", newVenue);
+//     try {
+//         const response = await fetch("http://localhost:3690/venue", {
+//             method: "POST",
+//             headers: {
+//                 "Content-Type": "application/json",
+//             },
+//             body: JSON.stringify(newVenue),
+//         });
+//         if (!response.ok) {
+//             const errorData = await response.json();
+//             console.error("Error creating Venue:", errorData);
+//             return new Response("Failed to create Venue", { status: 500 });
+//         }
+//         toast.success("Venue created!");
+//         return redirect("/admin/venue");
+//     } catch (error) {
+//         console.error("Error occurred while creating Venue:", error);
+//         return new Response("Error creating Venue", { status: 500 });
+//     }
+// };
 export const action = async ({ request }: LoaderFunctionArgs) => {
     let formData = await request.formData();
     let name = formData.get("name")?.toString().trim();
-    let venuetype = formData.get("venuetype")?.toString().trim();
+    let type_id = formData.get("venuetype")?.toString().trim();
+    let type_id_number = Number(type_id);
 
     const newVenue = {
         name,
-        venuetype,
+        type_id,
     };
 
     console.log("New Venue:", newVenue);
@@ -19,22 +51,32 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(newVenue),
+            body: JSON.stringify({ name: name, type_id: type_id_number }),
         });
         if (!response.ok) {
-            const errorData = await response.json();
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (jsonError) {
+                errorData = { message: await response };
+            }
             console.error("Error creating Venue:", errorData);
+            toast.error(
+                "Error creating Venue: " +
+                    (errorData.message || "Unknown error")
+            );
             return new Response("Failed to create Venue", { status: 500 });
         }
         toast.success("Venue created!");
         return redirect("/admin/venue");
     } catch (error) {
         console.error("Error occurred while creating Venue:", error);
+        toast.error("An unexpected error occurred");
         return new Response("Error creating Venue", { status: 500 });
     }
 };
 
-const AddApproverPage: FC = () => {
+const AddVenuePage: FC = () => {
     const [venuetypes, setVenueTypes] = useState([]);
     useEffect(() => {
         const fetchVenueTypes = async () => {
@@ -134,4 +176,4 @@ const AddApproverPage: FC = () => {
     );
 };
 
-export default AddApproverPage;
+export default AddVenuePage;

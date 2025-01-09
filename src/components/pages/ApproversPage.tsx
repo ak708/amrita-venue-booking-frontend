@@ -28,13 +28,22 @@ const ApproversPage = () => {
         );
 
         if (!resp.ok) {
-            const errdata = await resp.json();
+            let errdata;
+            try {
+                errdata = await resp.json();
+            } catch (jsonError) {
+                errdata = { message: errdata };
+            }
             console.error("Error removing approver:", errdata);
-            toast.error("Error removing Approver");
+            toast.error(
+                "Error removing Approver: " +
+                    (errdata.message || "Unknown error")
+            );
             return;
         }
 
-        toast.success("Approver removed successfully");
+        const data = await resp.json();
+        toast.success(data.Message || "Approver removed successfully");
 
         setApprovers(approvers.filter((approver: any) => approver.id !== id));
     };

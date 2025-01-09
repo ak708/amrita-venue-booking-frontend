@@ -125,7 +125,7 @@ export namespace booking {
         ): Promise<ListBookingsResponse> {
             const resp = await this.baseClient.callAPI(
                 "GET",
-                `/approve?venue_id=${venueId?.toString() ?? ""}`
+                `/approve?venue_id=${venueId?.toString() ?? ""}&from=${_from}`
             );
             return (await resp.json()) as ListBookingsResponse;
         }
@@ -135,7 +135,7 @@ export namespace booking {
         ): Promise<ListBookingsResponse> {
             const resp = await this.baseClient.callAPI(
                 "GET",
-                `/approve?venue_id=${venueId?.toString() ?? ""}`
+                `/getmonthviewbookings?venue_id=${venueId?.toString() ?? ""}`
             );
             console.log("API Response:", resp);
             return (await resp.json()) as ListBookingsResponse;

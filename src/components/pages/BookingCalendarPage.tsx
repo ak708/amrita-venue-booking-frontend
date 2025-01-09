@@ -6,7 +6,6 @@ import CalendarHourRows from "../calendar/CalendarHourRows";
 import WeekViewDayDividers from "../calendar/WeekViewDayDividers";
 import WeekViewEventGrid from "../calendar/WeekViewEventGrid";
 import WeekViewAvailability from "../calendar/WeekViewAvailability";
-import BookedEvents from "../calendar/BookedEvents";
 import { BookingCalendarTimeIndicator } from "../calendar/CalendarTimeIndicator";
 import BookingModal from "../BookingModal";
 import scrollToTime from "../../lib/scrollToTime";
@@ -78,6 +77,7 @@ export default function BookingCalendarPage() {
                                 <WeekViewDayDividers />
                                 <WeekViewEventGrid>
                                     <WeekViewAvailability
+                                        {...reducerProps}
                                         venueId={selectedVenueId}
                                     />
                                     <WeekViewBookings

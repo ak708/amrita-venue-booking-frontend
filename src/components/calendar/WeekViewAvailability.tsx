@@ -2,6 +2,7 @@ import React, { FC } from "react";
 import { getHours, getMinutes, parse } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { availabilityQuery } from "../../lib/api";
+import { BookingReducerProps } from "../../lib/bookingReducer";
 
 const END_OF_DAY = 1440;
 
@@ -16,11 +17,14 @@ const getMinutesFromMidnight = (time: Date) => {
     return getHours(time) * 60 + getMinutes(time);
 };
 
-interface WeekViewAvailabilityProps {
+interface WeekViewAvailabilityProps extends BookingReducerProps {
     venueId: number | null;
 }
 
-const WeekViewAvailability: FC<WeekViewAvailabilityProps> = ({ venueId }) => {
+const WeekViewAvailability: FC<WeekViewAvailabilityProps> = ({
+    venueId,
+    state,
+}) => {
     const { data: availability = [], error: fetchError } = useQuery({
         queryKey: availabilityQuery(venueId).queryKey,
         queryFn: availabilityQuery(venueId).queryFn,

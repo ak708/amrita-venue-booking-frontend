@@ -116,14 +116,14 @@ const PaginatedVenueTable = ({
                 <tbody>
                     {currentRows.map((record: any) => (
                         <tr
-                            key={record.id}
+                            key={record.venue_id}
                             className="border-b justify-between"
                         >
                             <td className="px-4 py-2">{record.name}</td>
                             <td className="px-4 py-2">
                                 <button
                                     onClick={() =>
-                                        handleRemoveFunction(record.id)
+                                        handleRemoveFunction(record.venue_id)
                                     }
                                     className="text-red-600 hover:text-red-800"
                                 >
@@ -269,20 +269,23 @@ const VenuePage = () => {
     }, []);
 
     const handleRemoveVenue = async (id: any) => {
-        const resp = await fetch(`http://localhost:3690/venue?venue_id=${id}`, {
+        const resp = await fetch(`http://localhost:3690/venue`, {
             method: "DELETE",
+            body: JSON.stringify({ venue_id: id }),
         });
 
         if (!resp.ok) {
-            const errdata = await resp.json();
-            console.error("Error removing approver:", errdata);
-            toast.error("Error removing Approver");
+            const errData = await resp.json();
+            console.error("Error removing Venue:", errData);
+            toast.error("Error removing Venue");
             return;
         }
 
-        toast.success("Approver removed successfully");
+        toast.success("Venue removed successfully");
 
-        setVenues(venues.filter((venue: any) => venue.id !== id));
+        setVenues((prevVenues) =>
+            prevVenues.filter((venue: any) => venue.venue_id !== id)
+        );
     };
 
     const handleRemoveVenueType = async (id: any) => {

@@ -38,20 +38,19 @@ export const availabilityQuery = (venueId: number | null) => ({
     },
 });
 
-export const bookedSlotsQuery = (date: Date, venueId: number | null) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return {
-        queryKey: ["bookableSlots"],
-        queryFn: async (): Promise<booking.BookedSlot[]> => {
-            if (venueId === null) {
-                throw new Error("venueId cannot be null");
-            }
-            const resp = await client.booking.GetBookedSlots(dateStr, venueId);
-            return resp.bookings;
-        },
-    };
-};
+export const bookedSlotsQuery = async (
+    fromdate: Date,
+    venueId: number
+): Promise<booking.BookedSlot[] | null> => {
+    const dateStr = format(fromdate, "yyyy-MM-dd'T'HH:mm:ss'Z'");
 
+    if (venueId === null) {
+        throw new Error("venueId cannot be null");
+    }
+    const resp = await client.booking.GetBookedSlots(dateStr, venueId);
+    console.log(resp.bookings);
+    return resp.bookings;
+};
 export const scheduledEventsQuery = (venueId: number | null) => {
     return {
         queryKey: ["scheduledEvents"],

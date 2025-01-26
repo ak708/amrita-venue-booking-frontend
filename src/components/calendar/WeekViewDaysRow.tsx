@@ -11,6 +11,7 @@ const WeekViewDaysRow: FC<BookingReducerProps> = ({ state }) => {
 
                 {state.displayedDays.map((day) => {
                     const isToday = isSameDay(getCurrentUTCDate(), day);
+                    console.log(day);
 
                     return (
                         <div

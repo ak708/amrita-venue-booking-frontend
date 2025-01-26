@@ -1,0 +1,140 @@
+// if (!isSameDay(start, end)) {
+                    //     const events = [];
+                    //     let currentDay = new Date(start);
+                    //     currentDay.setUTCHours(0, 0, 0, 0); // Start of the first day in UTC
+                    //     console.log(isSameDay(start, end));
+                    //     while (
+                    //         currentDay < end ||
+                    //         (isSameDay(currentDay, end) &&
+                    //             start.getTime() !== end.getTime())
+                    //     ) {
+                    //         const segmentStart = new Date(currentDay);
+                    //         const segmentEnd = new Date(currentDay);
+
+                    //         // Set segmentStart
+                    //         if (isSameDay(currentDay, start)) {
+                    //             segmentStart.setTime(start.getTime()); // Use the original start time
+                    //         } else {
+                    //             segmentStart.setUTCHours(0, 0, 0, 0); // Start of day in UTC
+                    //         }
+
+                    //         // Set segmentEnd
+                    //         if (isSameDay(currentDay, end)) {
+                    //             segmentEnd.setTime(end.getTime()); // Use the original end time
+                    //         } else {
+                    //             segmentEnd.setUTCHours(23, 59, 59, 999); // End of day in UTC
+                    //         }
+
+                    //         // Ensure segmentStart < segmentEnd
+                    //         if (segmentStart < segmentEnd) {
+                    //             events.push({
+                    //                 ...event,
+                    //                 start_time: segmentStart.toISOString(),
+                    //                 end_time: segmentEnd.toISOString(),
+                    //                 startTime: segmentStart,
+                    //                 endTime: segmentEnd,
+                    //             });
+                    //         }
+
+                    //         // Move to the next day
+                    //         currentDay = addDays(currentDay, 1);
+                    //         currentDay.setUTCHours(0, 0, 0, 0); // Reset to start of the next day
+                    //     }
+
+                    //     return events;
+                    // } else {
+                    //     return [
+                    //         {
+                    //             ...event,
+                    //             startTime: start,
+                    //             endTime: end,
+                    //         },
+                    //     ];
+                    // }
+                    // .filter((event) => {
+                //     return (
+                //         (isSameDay(event.startTime, state.displayedDay) &&
+                //             event.startTime < event.endTime) ||
+                //         (isSameDay(event.endTime, state.displayedDay) &&
+                //             event.startTime !== event.endTime)
+                //     );
+                // });
+
+                const eventsToday = useMemo(() => {
+        return (scheduledEvents?.bookings || [])
+            .flatMap((event) => {
+                const start = parseISO(event.start_time);
+                const end = parseISO(event.end_time);
+
+                if (!isSameDay(start, end)) {
+                    const events = [];
+                    let currentDay = new Date(start);
+                    currentDay.setUTCHours(0, 0, 0, 0); // Start of the first day in UTC
+
+                    while (currentDay <= end) {
+                        let segmentStart = new Date(currentDay);
+                        let segmentEnd = new Date(currentDay);
+
+                        if (isSameDay(currentDay, start)) {
+                            segmentStart.setTime(start.getTime());
+                        } else {
+                            segmentStart.setUTCHours(0, 0, 0, 0);
+                        }
+
+                        if (isSameDay(currentDay, end)) {
+                            segmentEnd.setTime(end.getTime());
+                        } else {
+                            segmentEnd.setUTCHours(23, 59, 59, 999);
+                        }
+
+                        if (segmentStart < segmentEnd) {
+                            console.log(segmentStart, segmentEnd);
+                            events.push({
+                                ...event,
+                                start_time: segmentStart.toISOString(),
+                                end_time: segmentEnd.toISOString(),
+                                startTime: segmentStart,
+                                endTime: segmentEnd,
+                            });
+                        }
+
+                        // Only proceed to the next day if we haven't ended on the start of the next day
+                        if (
+                            !(
+                                isSameDay(currentDay, end) &&
+                                start.getTime() === end.getTime()
+                            )
+                        ) {
+                            console.log(currentDay);
+                            currentDay = addDays(currentDay, 1);
+                            currentDay.setUTCHours(0, 0, 0, 0);
+                        } else {
+                            break; // Stop creating segments if end time is at the start of the day
+                        }
+                    }
+                    console.log(events);
+                    return events;
+                } else {
+                    return [{ ...event, startTime: start, endTime: end }];
+                }
+            })
+
+            .filter((event) => {
+                const eventStart = parseISO(event.start_time);
+                const eventEnd = parseISO(event.end_time);
+
+                const displayDayStart = new Date(state.displayedDay);
+                displayDayStart.setHours(0, 0, 0, 0); // Start of the displayed day
+
+                const displayDayEnd = new Date(displayDayStart);
+                displayDayEnd.setHours(23, 59, 59, 999); // End of the displayed day
+
+                return (
+                    (eventStart >= displayDayStart &&
+                        eventStart <= displayDayEnd) || // Starts within the displayed day
+                    (eventEnd >= displayDayStart &&
+                        eventEnd <= displayDayEnd) || // Ends within the displayed day
+                    (eventStart <= displayDayStart && eventEnd >= displayDayEnd) // Spans the entire displayed day
+                );
+            });
+    }, [scheduledEvents, state.displayedDay, venueId]);

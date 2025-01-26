@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import { utcToZonedTime } from "date-fns-tz";
 
 interface Booking {
     id: number;
@@ -289,6 +290,27 @@ const RequestsPage = () => {
                 </thead>
                 <tbody>
                     {paginatedRequests.map((request) => {
+                        const a = new Date(request.start_time);
+                        console.log(a);
+                        const b = format(
+                            new Date(request.start_time),
+                            "yyyy-MM-dd HH:mm"
+                        );
+
+                        console.log(b);
+                        const utcStartDate = new Date(request.start_time);
+                        const utcEndDate = new Date(request.end_time);
+
+                        const utcFormattedEndDate = format(
+                            utcToZonedTime(utcEndDate, "UTC"),
+                            "yyyy-MM-dd HH:mm"
+                        );
+                        console.log(utcFormattedEndDate);
+                        const utcFormattedStartDate = format(
+                            utcToZonedTime(utcStartDate, "UTC"),
+                            "yyyy-MM-dd HH:mm"
+                        );
+                        console.log(utcFormattedStartDate);
                         const venueName = getVenueName(request.venue_id);
                         const venueType = venues.find(
                             (v: any) => v.venue_id === request.venue_id
@@ -311,13 +333,13 @@ const RequestsPage = () => {
                                 </td>
                                 <td className="border border-gray-300 px-4 py-2">
                                     {format(
-                                        new Date(request.start_time),
+                                        utcToZonedTime(utcStartDate, "UTC"),
                                         "yyyy-MM-dd HH:mm"
                                     )}
                                 </td>
                                 <td className="border border-gray-300 px-4 py-2">
                                     {format(
-                                        new Date(request.end_time),
+                                        utcToZonedTime(utcEndDate, "UTC"),
                                         "yyyy-MM-dd HH:mm"
                                     )}
                                 </td>

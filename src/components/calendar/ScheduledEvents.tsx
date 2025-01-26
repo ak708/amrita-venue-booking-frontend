@@ -1,4 +1,4 @@
-import { FC, useMemo } from "react";
+import { FC, useEffect, useState, useMemo } from "react";
 import {
     format,
     getHours,
@@ -6,18 +6,33 @@ import {
     intervalToDuration,
     isSameDay,
     differenceInMinutes,
+    parseISO,
+    addDays,
 } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
 import { useQuery } from "@tanstack/react-query";
 import { scheduledEventsQuery } from "../../lib/api";
 import { booking } from "../../lib/client";
 import { AdminReducerProps } from "../../lib/adminReducer";
-import getCurrentUTCDate from "../../lib/getCurrentUTCDate";
-import getUTCDateFromISO from "../../lib/getUTCDateFromISO";
-
-import { startOfDay, endOfDay, addDays } from "date-fns";
+import { stat } from "fs";
 
 interface ScheduledEventsProps extends AdminReducerProps {
     venueId: number | null;
+}
+
+// Define the type for an event
+interface Event {
+    start_time: string;
+    end_time: string;
+    startTime: Date;
+    endTime: Date;
+    id: number;
+    venueId: number;
+    email: string;
+    createdAt: string;
+    status: number;
+    reason: string;
+    approverId: number;
 }
 
 const ScheduledEvents: FC<ScheduledEventsProps> = ({
@@ -26,89 +41,101 @@ const ScheduledEvents: FC<ScheduledEventsProps> = ({
     venueId,
 }) => {
     const { data: scheduledEvents } = useQuery(scheduledEventsQuery(venueId));
-    console.log(scheduledEvents);
+    const [eventsToday, setEventsToday] = useState<Event[]>([]); // Initialize with the correct type
 
-    // const eventsToday = useMemo(() => {
-    //     return (scheduledEvents?.bookings || [])
-    //         .filter((event) => {
-    //             const start = getUTCDateFromISO(event.start_time);
-    //             const end = getUTCDateFromISO(event.end_time);
-    //             return (
-    //                 isSameDay(start, state.displayedDay) &&
-    //                 isSameDay(end, state.displayedDay)
-    //             );
-    //         })
-    //         .map((event) => {
-    //             const start = getUTCDateFromISO(event.start_time);
-    //             const end = getUTCDateFromISO(event.end_time);
-    //             return { ...event, startTime: start, endTime: end };
-    //         });
-    // }, [scheduledEvents, state.displayedDay]);
+    useEffect(() => {
+        if (scheduledEvents?.bookings) {
+            const computedEvents = scheduledEvents.bookings
+                .flatMap((event) => {
+                    const start = parseISO(event.start_time);
+                    const end = parseISO(event.end_time);
 
-    const eventsToday = useMemo(() => {
-        return (scheduledEvents?.bookings || [])
-            .flatMap((event) => {
-                const start = getUTCDateFromISO(event.start_time);
-                const end = getUTCDateFromISO(event.end_time);
+                    if (!isSameDay(start, end)) {
+                        const events: Event[] = [];
+                        let currentDay = new Date(start);
+                        currentDay.setUTCHours(0, 0, 0, 0); // Start of the first day in UTC
 
-                if (!isSameDay(start, end)) {
-                    const events = [];
-                    let currentDay = startOfDay(start);
+                        while (currentDay <= end) {
+                            let segmentStart = new Date(currentDay);
+                            let segmentEnd = new Date(currentDay);
 
-                    while (currentDay <= endOfDay(end)) {
-                        let segmentStart = currentDay;
-                        let segmentEnd = endOfDay(currentDay);
+                            if (isSameDay(currentDay, start)) {
+                                segmentStart.setTime(start.getTime());
+                            } else {
+                                segmentStart.setUTCHours(0, 0, 0, 0);
+                            }
 
-                        if (isSameDay(currentDay, start)) {
-                            segmentStart = start;
-                        } else {
-                            segmentStart = new Date(
-                                currentDay.setHours(0, 0, 1, 0)
-                            );
+                            if (isSameDay(currentDay, end)) {
+                                segmentEnd.setTime(end.getTime());
+                            } else {
+                                segmentEnd.setUTCHours(23, 59, 59, 999);
+                            }
+
+                            if (segmentStart < segmentEnd) {
+                                console.log(segmentStart, segmentEnd);
+                                events.push({
+                                    ...event,
+                                    start_time: segmentStart.toISOString(),
+                                    end_time: segmentEnd.toISOString(),
+                                    startTime: segmentStart,
+                                    endTime: segmentEnd,
+                                });
+                            }
+
+                            // Only proceed to the next day if we haven't ended on the start of the next day
+                            if (
+                                !(
+                                    isSameDay(currentDay, end) &&
+                                    start.getTime() === end.getTime()
+                                )
+                            ) {
+                                console.log(currentDay);
+                                currentDay = addDays(currentDay, 1);
+                                currentDay.setUTCHours(0, 0, 0, 0);
+                            } else {
+                                break; // Stop creating segments if end time is at the start of the day
+                            }
                         }
-                        if (isSameDay(currentDay, end)) {
-                            segmentEnd = end;
-                        } else {
-                            segmentEnd = new Date(
-                                currentDay.setHours(23, 59, 59, 999)
-                            );
-                        }
-
-                        if (segmentStart < segmentEnd) {
-                            events.push({
-                                ...event,
-                                start_time: segmentStart.toISOString(),
-                                end_time: segmentEnd.toISOString(),
-                                startTime: segmentStart,
-                                endTime: segmentEnd,
-                            });
-                        }
-                        currentDay = addDays(currentDay, 1);
+                        console.log(events);
+                        return events;
+                    } else {
+                        return [{ ...event, startTime: start, endTime: end }];
                     }
-                    return events;
-                } else {
-                    return [
-                        {
-                            ...event,
-                            startTime: start,
-                            endTime: end,
-                        },
-                    ];
-                }
-            })
-            .filter((event) => {
-                return (
-                    isSameDay(event.startTime, state.displayedDay) ||
-                    isSameDay(event.endTime, state.displayedDay)
-                );
-            });
-    }, [scheduledEvents, state.displayedDay]);
+                })
+                .filter((event) => {
+                    const eventStart = parseISO(event.start_time);
+                    const eventEnd = parseISO(event.end_time);
+
+                    // Convert displayedDay to UTC
+                    const displayDayStart = new Date(state.displayedDay);
+                    displayDayStart.setUTCHours(0, 0, 0, 0); // Start of the displayed day in UTC
+
+                    const displayDayEnd = new Date(displayDayStart);
+                    displayDayEnd.setUTCHours(23, 59, 59, 999); // End of the displayed day in UTC
+
+                    return (
+                        (eventStart >= displayDayStart &&
+                            eventStart <= displayDayEnd) || // Starts within the displayed day
+                        (eventEnd >= displayDayStart &&
+                            eventEnd <= displayDayEnd) || // Ends within the displayed day
+                        (eventStart <= displayDayStart &&
+                            eventEnd >= displayDayEnd) // Spans the entire displayed day
+                    );
+                });
+
+            setEventsToday(computedEvents);
+        } else {
+            setEventsToday([]); // Reset if no bookings
+        }
+        console.log(eventsToday);
+        console.log(state.displayedDay);
+    }, [scheduledEvents, state.displayedDay, venueId]);
 
     return (
         <>
             {eventsToday.map((event, index) => {
-                const start = event.startTime;
-                const end = event.endTime;
+                const start = utcToZonedTime(event.startTime, "UTC");
+                const end = utcToZonedTime(event.endTime, "UTC");
                 const minutesFromMidnight =
                     getHours(start) * 60 + getMinutes(start);
                 const duration = intervalToDuration({ start, end });
@@ -140,10 +167,10 @@ const Event: FC<AdminReducerProps & { event: booking.Booking }> = ({
     event,
     dispatch,
 }) => {
-    const start = getUTCDateFromISO(event.start_time);
-    const end = getUTCDateFromISO(event.end_time);
-    const isCurrentDay = isSameDay(getCurrentUTCDate(), start);
-    const isPastEvent = start < getCurrentUTCDate();
+    const start = utcToZonedTime(parseISO(event.start_time), "UTC");
+    const end = utcToZonedTime(parseISO(event.end_time), "UTC");
+    const isCurrentDay = isSameDay(new Date(), start);
+    const isPastEvent = start < new Date();
 
     const color = useMemo(() => {
         if (isPastEvent) return "gray";
@@ -151,12 +178,9 @@ const Event: FC<AdminReducerProps & { event: booking.Booking }> = ({
         return "blue";
     }, [isCurrentDay, isPastEvent]);
 
-    const minutesFromMidnightStart = start.getHours() * 60 + start.getMinutes();
-    const minutesFromMidnightEnd = end.getHours() * 60 + end.getMinutes();
     const durationInMinutes = Math.max(30, differenceInMinutes(end, start));
 
     const heightInPixels = durationInMinutes * 1.2;
-    const topOffset = minutesFromMidnightStart * 1.2;
     return (
         <div
             onClick={() =>

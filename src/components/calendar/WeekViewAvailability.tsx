@@ -43,6 +43,7 @@ const WeekViewAvailability: FC<WeekViewAvailabilityProps> = ({
         <>
             {Array.from({ length: 7 }, (_, index) => {
                 const dayIndex = index;
+                console.log(dayIndex);
 
                 const dayAvailability = availability.filter(
                     (slot: Availability) =>

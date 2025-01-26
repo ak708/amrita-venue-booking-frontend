@@ -332,10 +332,10 @@ const RequestsPage = () => {
                                     {request.reason}
                                 </td>
                                 <td className="border border-gray-300 px-4 py-2">
-                                    {utcToZonedTime(utcStartDate, "UTC")
-                                        .toISOString()
-                                        .slice(0, 16)
-                                        .replace("T", " ")}
+                                    {format(
+                                        utcToZonedTime(utcStartDate, "UTC"),
+                                        "yyyy-MM-dd HH:mm"
+                                    )}
                                 </td>
                                 <td className="border border-gray-300 px-4 py-2">
                                     {format(

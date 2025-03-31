@@ -8,7 +8,7 @@ import {
 } from "react-router-dom";
 import BookingCalendarPage from "./components/pages/BookingCalendarPage";
 import HeaderNav from "./components/HeaderNav";
-import LoginPage, { action as loginAction } from "./components/pages/LoginPage";
+import LoginPage from "./components/pages/LoginPage"; // No action needed
 import AdminLayout from "./components/AdminLayout";
 import AdminCalendarPage from "./components/pages/AdminCalendarPage";
 import AddApproverPage, {
@@ -29,6 +29,9 @@ import AddVenueTypePage, {
 import AddRequestPage, {
     action as addRequestAction,
 } from "./components/pages/AddRequestPage";
+import HomePage from "./components/pages/HomePage";
+import { action as loginAction } from "./components/pages/LoginPage";
+import { jwtDecode } from "jwt-decode";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -38,53 +41,79 @@ const queryClient = new QueryClient({
     },
 });
 
+// Define a type for the decoded JWT token
+interface DecodedToken {
+    sub: string;
+    email: string;
+    role: string;
+    iat: number;
+    exp: number;
+}
+
+// Authentication check function
+const checkAuth = (allowedRoles: string[]) => {
+    const token = Cookies.get("auth-token");
+    if (!token) {
+        return redirect("/#/login");
+    }
+
+    try {
+        const decoded: DecodedToken = jwtDecode(token);
+        if (!allowedRoles.includes(decoded.role)) {
+            toast.error("Unauthorized access");
+            // return redirect("/#/login");
+        }
+        return null;
+    } catch (error) {
+        Cookies.remove("auth-token");
+        toast.error("Invalid session, please log in again");
+        return redirect("/#/login");
+    }
+};
+
 const router = createHashRouter([
     {
         id: "root",
-        path: "",
+        path: "/",
+        element: (
+            <div className="flex flex-col h-screen">
+                <HeaderNav />
+                <Outlet />
+            </div>
+        ),
         children: [
             {
-                path: "",
-                element: (
-                    <div className="flex flex-col h-screen">
-                        <HeaderNav />
-                        <Outlet />
-                    </div>
-                ),
-                children: [
-                    {
-                        index: true,
-                        element: <BookingCalendarPage />,
-                    },
-                    {
-                        path: "login",
-                        action: loginAction,
-                        element: <LoginPage />,
-                    },
-                    {
-                        path: "addrequest",
-                        action: addRequestAction,
-                        element: <AddRequestPage />,
-                    },
-                ],
+                index: true,
+                element: <HomePage />,
+            },
+            {
+                path: "login",
+                action: loginAction,
+                element: <LoginPage />,
             },
             {
                 path: "logout",
                 loader() {
                     Cookies.remove("auth-token");
                     toast.success("Logged out");
-                    return redirect("/");
+                    return redirect("/#/");
                 },
+            },
+            {
+                path: "booking",
+                element: <BookingCalendarPage />,
+                loader: () => checkAuth(["student"]),
+            },
+            {
+                path: "addrequest",
+                action: addRequestAction,
+                element: <AddRequestPage />,
+                loader: () => checkAuth(["student"]), // Assuming only students can add requests
             },
             {
                 path: "admin",
                 element: <AdminLayout />,
-                loader() {
-                    if (!Cookies.get("auth-token")) {
-                        return redirect("/login");
-                    }
-                    return null;
-                },
+                loader: () => checkAuth(["faculty", "admin"]),
                 children: [
                     {
                         index: true,
@@ -113,7 +142,6 @@ const router = createHashRouter([
                     },
                     {
                         path: "venue",
-
                         element: <VenuePage />,
                         errorElement: <VenuePage />,
                     },

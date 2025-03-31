@@ -1,6 +1,10 @@
 import toast from "react-hot-toast";
 import React, { FC } from "react";
 import { Form, LoaderFunctionArgs, redirect } from "react-router-dom";
+import { BsMicrosoft } from "react-icons/bs";
+
+import MicrosoftLogin from "react-microsoft-login";
+
 import Cookies from "js-cookie";
 
 export const action = async ({ request }: LoaderFunctionArgs) => {
@@ -41,6 +45,13 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const LoginPage: FC = () => {
+    const authHandler = (err: any, data: any): void => {
+        console.log(err, data);
+    };
+
+    const handleMicrosoftLogin = () => {
+        window.location.href = "http://localhost:3690/auth/microsoft";
+    };
     return (
         <div className="flex-1">
             <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
@@ -48,6 +59,27 @@ const LoginPage: FC = () => {
                     <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
                         Sign in to your account
                     </h2>
+                </div>
+                {/* <div className="flex sm:mx-auto sm:w-full sm:max-w-sm justify-center p-2">
+                    <MicrosoftLogin
+                        clientId={"64ebfb6c-e85c-46c5-bda0-10d06d0ee2d3"}
+                        authCallback={authHandler}
+                    >
+                        <button className="rounded-md bg-blue-600 px-4 py-2 text-white flex flex-row items-center justify-center gap-2 hover:bg-blue-500">
+                            <BsMicrosoft className="text-white" />
+                            Sign in with Microsoft
+                        </button>
+                    </MicrosoftLogin>
+                </div> */}
+
+                <div className="flex sm:mx-auto sm:w-full sm:max-w-sm justify-center p-2">
+                    <button
+                        onClick={handleMicrosoftLogin}
+                        className="rounded-md bg-blue-600 px-4 py-2 text-white flex flex-row items-center justify-center gap-2 hover:bg-blue-500"
+                    >
+                        <BsMicrosoft className="text-white" />
+                        Sign in with Microsoft
+                    </button>
                 </div>
 
                 <div className="mt-5 sm:mx-auto sm:w-full sm:max-w-sm">

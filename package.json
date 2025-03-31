@@ -11,6 +11,8 @@
     "gen:local": "encore gen client my-app-name-f28i --output=./src/lib/client.ts --env=local"
   },
   "dependencies": {
+    "@azure/msal-browser": "^4.9.1",
+    "@azure/msal-react": "^3.0.8",
     "@headlessui/react": "^1.7.19",
     "@heroicons/react": "^2.2.0",
     "@tailwindcss/forms": "^0.5.9",
@@ -18,9 +20,12 @@
     "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.1",
     "js-cookie": "^3.0.5",
+    "jwt-decode": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.5.1",
+    "react-icons": "^5.5.0",
+    "react-microsoft-login": "^2.0.1",
     "react-router-dom": "^6.28.0",
     "uuid": "^9.0.1"
   },
